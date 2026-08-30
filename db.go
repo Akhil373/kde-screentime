@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -11,6 +12,7 @@ import (
 type Store struct {
 	db *sql.DB
 	LastID *int64
+	mu sync.Mutex
 }
 
 func NewStore(path string) (*Store, error) {
@@ -58,9 +60,12 @@ func NewStore(path string) (*Store, error) {
 }
 
 func (s *Store) Record(win WindowInfo) error {
+
 	if s.db == nil {
 		return fmt.Errorf("database connection is nil")
 	}
+
+	s.mu.Lock(); defer s.mu.Unlock()
 
 	_, err := s.db.Exec(
 		`
@@ -115,7 +120,57 @@ func (s *Store) Record(win WindowInfo) error {
 	return nil
 }
 
+func (s *Store) Heartbeat() error {
+	if s.db == nil {
+		return fmt.Errorf("database connection is nil")
+	}
+
+	s.mu.Lock(); defer s.mu.Unlock()
+
+	if s.LastID != nil {
+		_, err := s.db.Exec(
+			`
+    UPDATE screenactivity
+    SET end_time = ?
+    WHERE id = ?
+	`,
+			time.Now().Unix(),
+			*s.LastID,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) Finalize() error {
+	s.mu.Lock(); defer s.mu.Unlock()
+
+	if s.LastID != nil {
+
+		_, err := s.db.Exec(
+			`
+    UPDATE screenactivity
+    SET end_time = ?
+    WHERE id = ?
+	`,
+			time.Now().Unix(),
+			*s.LastID,
+		)
+		if err != nil {
+			return err
+		}
+		s.LastID = nil
+	}
+	return nil
+}
+
 func (s *Store) Close() error {
+	err := s.Finalize()
+	if err != nil {
+		return err
+	}
 	if s.db == nil {
 		return nil
 	}

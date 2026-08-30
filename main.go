@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"github.com/godbus/dbus"
 )
@@ -36,7 +37,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer store.Close()
 
 	tracker := Tracker{store}
 	objPath := dbus.ObjectPath("/org/screentime/Tracker")
@@ -59,7 +59,34 @@ func main() {
 
 	fmt.Println("D-Bus Greeter Service is running...")
 
+	ticker := time.NewTicker(60 * time.Second)
+	defer ticker.Stop()
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	<-sigChan
+
+	done := make(chan struct{})
+
+	go func() {
+		for {
+			select {
+				case <- ticker.C:
+					err := store.Heartbeat()
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Heartbeat failed: %v\n", err)
+					}
+				case <-sigChan:
+					close(done)
+					return
+			}
+		}
+	}()
+
+	<-done
+
+	fmt.Println("Shutting down...")
+	err = store.Close()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to close store: %v\n", err)
+	}
 }
