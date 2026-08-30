@@ -1,4 +1,4 @@
-module github.com/Akhil373/screen_time_wayland
+module github.com/Akhil373/kde-screentime
 
 go 1.27.0
 

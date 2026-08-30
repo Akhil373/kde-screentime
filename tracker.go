@@ -26,12 +26,12 @@ func (t Tracker) WindowActivated(payload string) *dbus.Error {
 		fmt.Printf("received invalid json paylod: %v\n", err)
 		return dbus.NewError("org.screentime.Tracker.Error.InvalidJSON", []interface{}{err.Error()})
 	}
-	fmt.Println("=========================")
-	fmt.Println("[Active Window Details]:")
-	fmt.Printf("App: %s\n", data.WMClass)
-	fmt.Printf("Title: %s\n", data.Caption)
-	fmt.Printf("PID: %d\n", data.PID)
-	fmt.Printf("Desktop: %v\n", data.VirtualDesktop)
+	// fmt.Println("=========================")
+	// fmt.Println("[Active Window Details]:")
+	// fmt.Printf("App: %s\n", data.WMClass)
+	// fmt.Printf("Title: %s\n", data.Caption)
+	// fmt.Printf("PID: %d\n", data.PID)
+	// fmt.Printf("Desktop: %v\n", data.VirtualDesktop)
 
 	if err := t.store.Record(data); err != nil {
 		log.Println("database error:", err)
