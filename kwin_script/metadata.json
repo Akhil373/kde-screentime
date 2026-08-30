@@ -1,0 +1,14 @@
+{
+    "KPlugin": {
+        "Name": "Screen Time Trigger",
+        "Description": "Emits D-Bus signals when active window changes",
+        "Icon": "preferences-system-windows",
+
+        "Id": "screentime_tracker",
+        "Version": "1.0",
+        "License": "GPLv3"
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js",
+    "KPackageStructure": "KWin/Script"
+}
