@@ -38,11 +38,11 @@ func main() {
 		panic(err)
 	}
 
-	tracker := Tracker{store}
+	tracker := Tracker{store, []string{}}
 	objPath := dbus.ObjectPath("/org/screentime/Tracker")
 	interfaceName := "org.screentime.Tracker"
 
-	err = conn.Export(tracker, objPath, interfaceName)
+	err = conn.Export(&tracker, objPath, interfaceName)
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("D-Bus Greeter Service is running...")
+	fmt.Println("D-Bus Service is running...")
 
 	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()

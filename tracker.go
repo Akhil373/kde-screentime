@@ -17,21 +17,23 @@ type WindowInfo struct {
 
 type Tracker struct {
 	store *Store
+	recentWindows []string
 }
 
-func (t Tracker) WindowActivated(payload string) *dbus.Error {
+func (t *Tracker) WindowActivated(payload string) *dbus.Error {
 	var data WindowInfo
 	err := json.Unmarshal([]byte(payload), &data)
 	if err != nil {
 		fmt.Printf("received invalid json paylod: %v\n", err)
 		return dbus.NewError("org.screentime.Tracker.Error.InvalidJSON", []interface{}{err.Error()})
 	}
-	// fmt.Println("=========================")
-	// fmt.Println("[Active Window Details]:")
-	// fmt.Printf("App: %s\n", data.WMClass)
-	// fmt.Printf("Title: %s\n", data.Caption)
-	// fmt.Printf("PID: %d\n", data.PID)
-	// fmt.Printf("Desktop: %v\n", data.VirtualDesktop)
+
+	t.addRecentWindow(data.Caption)
+	fmt.Print("\033[2J\033[H")
+	fmt.Println("recent windows:")
+	for i, w := range t.recentWindows {
+		fmt.Printf("%d: %s\n", i+1, w)
+	}
 
 	if err := t.store.Record(data); err != nil {
 		log.Println("database error:", err)
@@ -39,4 +41,15 @@ func (t Tracker) WindowActivated(payload string) *dbus.Error {
 	}
 
 	return nil
+}
+
+func (t *Tracker) addRecentWindow(window string) {
+	t.recentWindows = append(t.recentWindows, window)
+	if len(t.recentWindows) > 5 {
+		t.recentWindows = t.recentWindows[1:]
+	}
+}
+
+func (t *Tracker) RecentWindows() []string {
+	return t.recentWindows
 }
