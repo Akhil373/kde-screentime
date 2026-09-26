@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -12,6 +13,17 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "visualize" {
+		dbPath, err := getDbPath()
+		if err != nil {
+			log.Fatalf("failed to get DB path: %v", err)
+		}
+		if err := load_data(dbPath, 7); err != nil {
+			log.Fatalf("failed to load data: %v", err)
+		}
+		return
+	}
+
 	conn, err := dbus.SessionBus()
 	if err != nil {
 		panic(err)
@@ -19,19 +31,10 @@ func main() {
 
 	defer conn.Close()
 
-	dataHome := os.Getenv("XDG_DATA_HOME")
-	if dataHome == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			panic(err)
-		}
-		dataHome = filepath.Join(home, ".local", "share")
-	}
-	dbDir := filepath.Join(dataHome, "screentime")
-	if err := os.MkdirAll(dbDir, 0755); err != nil {
+	dbPath, err := getDbPath()
+	if err != nil {
 		panic(err)
 	}
-	dbPath := filepath.Join(dataHome, "screentime", "screen_time.db")
 
 	store, err := NewStore(dbPath)
 	if err != nil {
@@ -70,14 +73,14 @@ func main() {
 	go func() {
 		for {
 			select {
-				case <- ticker.C:
-					err := store.Heartbeat()
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Heartbeat failed: %v\n", err)
-					}
-				case <-sigChan:
-					close(done)
-					return
+			case <-ticker.C:
+				err := store.Heartbeat()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Heartbeat failed: %v\n", err)
+				}
+			case <-sigChan:
+				close(done)
+				return
 			}
 		}
 	}()
@@ -89,4 +92,22 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to close store: %v\n", err)
 	}
+}
+
+func getDbPath() (string, error) {
+	dataHome := os.Getenv("XDG_DATA_HOME")
+	if dataHome == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", fmt.Errorf("failed to get user home dir: %w", err)
+		}
+		dataHome = filepath.Join(home, ".local", "share")
+	}
+
+	dbDir := filepath.Join(dataHome, "screentime")
+	if err := os.MkdirAll(dbDir, 0o755); err != nil {
+		return "", fmt.Errorf("failed to create db directory: %w", err)
+	}
+
+	return filepath.Join(dbDir, "screen_time.db"), nil
 }
