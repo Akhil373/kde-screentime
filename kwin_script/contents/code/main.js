@@ -12,8 +12,6 @@ workspace.windowActivated.connect(function (window) {
     }),
   };
 
-  print(JSON.stringify(data));
-
   callDBus(
     "org.screentime",
     "/org/screentime/Tracker",

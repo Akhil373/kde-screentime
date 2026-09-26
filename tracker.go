@@ -16,7 +16,7 @@ type WindowInfo struct {
 }
 
 type Tracker struct {
-	store *Store
+	store         *Store
 	recentWindows []string
 }
 
@@ -29,11 +29,11 @@ func (t *Tracker) WindowActivated(payload string) *dbus.Error {
 	}
 
 	t.addRecentWindow(data.Caption)
-	fmt.Print("\033[2J\033[H")
-	fmt.Println("recent windows:")
-	for i, w := range t.recentWindows {
-		fmt.Printf("%d: %s\n", i+1, w)
-	}
+	// fmt.Print("\033[2J\033[H")
+	// fmt.Println("recent windows:")
+	// for i, w := range t.recentWindows {
+	// 	fmt.Printf("%d: %s\n", i+1, w)
+	// }
 
 	if err := t.store.Record(data); err != nil {
 		log.Println("database error:", err)
