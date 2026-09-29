@@ -9,17 +9,42 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/alexflint/go-arg"
 	"github.com/godbus/dbus"
 )
 
+type Args struct {
+	Graph     bool `arg:"-g,--graph" help:"render the graph"`
+	NumOfDays int  `arg:"positional" default:"7" help:"number of days of data to fetch"`
+}
+
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "visualize" {
-		dbPath, err := getDbPath()
+	dbPath, err := getDbPath()
+	if err != nil {
+		panic(err)
+	}
+
+	store, err := NewStore(dbPath)
+	if err != nil {
+		panic(err)
+	}
+
+	var args Args
+	arg.MustParse(&args)
+
+	if args.Graph {
+		graphFilePath := "./weeklyScreenTime.html"
+
+		weeklyData, err := store.LoadTotalDuration(args.NumOfDays)
+		perAppData, err := store.LoadPerAppDuration()
 		if err != nil {
-			log.Fatalf("failed to get DB path: %v", err)
+			log.Fatalf("failed to load total duration: %v", err)
 		}
-		if err := load_data(dbPath, 7); err != nil {
-			log.Fatalf("failed to load data: %v", err)
+
+		bar := barChart(weeklyData)
+		pie := pieRoseArea(perAppData)
+		if err = renderPage(graphFilePath, bar, pie); err != nil {
+			log.Fatalf("failed to render page: %v", err)
 		}
 		return
 	}
@@ -30,16 +55,6 @@ func main() {
 	}
 
 	defer conn.Close()
-
-	dbPath, err := getDbPath()
-	if err != nil {
-		panic(err)
-	}
-
-	store, err := NewStore(dbPath)
-	if err != nil {
-		panic(err)
-	}
 
 	tracker := Tracker{store, []string{}}
 	objPath := dbus.ObjectPath("/org/screentime/Tracker")
