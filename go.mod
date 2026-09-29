@@ -8,6 +8,8 @@ require (
 )
 
 require (
+	github.com/alexflint/go-arg v1.6.1 // indirect
+	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-echarts/go-echarts/v2 v2.7.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
