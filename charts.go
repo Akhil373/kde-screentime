@@ -14,7 +14,12 @@ import (
 
 func barChart(data []dailyScreenTime) *charts.Bar {
 	bar := charts.NewBar()
+
+	bar.AddJSFuncs("document.body.style.backgroundColor = '#100c2a';")
 	bar.SetGlobalOptions(
+		charts.WithInitializationOpts(opts.Initialization{
+			Theme: "dark",
+		}),
 		charts.WithTitleOpts(opts.Title{Title: "Week's Screen Time"}),
 		charts.WithTooltipOpts(opts.Tooltip{
 			Show: opts.Bool(true),
@@ -53,6 +58,9 @@ func barChart(data []dailyScreenTime) *charts.Bar {
 func pieRoseArea(data []perAppDuration) *charts.Pie {
 	pie := charts.NewPie()
 	pie.SetGlobalOptions(
+		charts.WithInitializationOpts(opts.Initialization{
+			Theme: "dark",
+		}),
 		charts.WithTitleOpts(opts.Title{
 			Title: "App Usage Breakdown",
 			Left:  "center",
