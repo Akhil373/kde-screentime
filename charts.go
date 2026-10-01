@@ -44,11 +44,13 @@ func barChart(data []dailyScreenTime) *charts.Bar {
 		SetSeriesOptions(charts.WithMarkLineNameTypeItemOpts(
 			opts.MarkLineNameTypeItem{Name: "Maximum", Type: "max", LineStyle: &opts.LineStyle{
 				Color: "#E76F51",
+				Width: 2,
 				Type:  "dashed",
 			}},
 			opts.MarkLineNameTypeItem{Name: "Average", Type: "average", LineStyle: &opts.LineStyle{
 				Color: "#F4A261",
-				Type:  "dotted",
+				Width: 2,
+				Type:  "dashed",
 			}},
 		))
 

@@ -190,7 +190,7 @@ func (s *Store) LoadPerAppDuration() ([]perAppDuration, error) {
     FROM apps a
     JOIN screenactivity s ON a.id = s.app_id
     WHERE s.end_time IS NOT NULL
-        AND s.start_time >= strftime('%s', 'now', 'start of day', 'localtime')
+		AND date(s.start_time, 'unixepoch', 'localtime') = date('now', 'localtime')
     GROUP BY a.id, a.wmclass
     ORDER BY total_duration DESC;
 `
