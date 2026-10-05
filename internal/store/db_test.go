@@ -1,4 +1,4 @@
-package main
+package store
 
 import "testing"
 
@@ -9,7 +9,7 @@ func TestNewStore_CreateTables(t *testing.T) {
 	}
 	defer store.Close()
 
-	if store.db == nil {
+	if store.Db == nil {
 		t.Fatal("db is nil")
 	}
 
@@ -26,7 +26,6 @@ func TestRecord_InsertsAppAndActivity(t *testing.T) {
 	defer store.Close()
 
 	err = store.Record(WindowInfo{PID: 123, Caption: "test", WMClass: "test", VirtualDesktop: []int32{1}})
-
 	if err != nil {
 		t.Fatal(err)
 	}

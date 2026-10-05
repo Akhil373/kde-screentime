@@ -1,27 +1,28 @@
-package main
+package tracker
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
 
+	"github.com/Akhil373/kde-screentime/internal/store"
 	"github.com/godbus/dbus"
 )
 
-type WindowInfo struct {
-	PID            int32   `json:"pid"`
-	Caption        string  `json:"caption"`
-	WMClass        string  `json:"wm_class"`
-	VirtualDesktop []int32 `json:"virtual_desktop"`
-}
-
 type Tracker struct {
-	store         *Store
+	st            *store.Store
 	recentWindows []string
 }
 
+func New(st *store.Store) *Tracker {
+	return &Tracker{
+		st:            st,
+		recentWindows: []string{},
+	}
+}
+
 func (t *Tracker) WindowActivated(payload string) *dbus.Error {
-	var data WindowInfo
+	var data store.WindowInfo
 	err := json.Unmarshal([]byte(payload), &data)
 	if err != nil {
 		fmt.Printf("received invalid json paylod: %v\n", err)
@@ -35,7 +36,7 @@ func (t *Tracker) WindowActivated(payload string) *dbus.Error {
 	// 	fmt.Printf("%d: %s\n", i+1, w)
 	// }
 
-	if err := t.store.Record(data); err != nil {
+	if err := t.st.Record(data); err != nil {
 		log.Println("database error:", err)
 		return dbus.MakeFailedError(err)
 	}

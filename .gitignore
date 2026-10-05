@@ -1,3 +1,4 @@
 graphs/
 test/
 *.html
+bin/

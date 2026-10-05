@@ -1,4 +1,4 @@
-package main
+package report
 
 import (
 	"fmt"
@@ -6,13 +6,14 @@ import (
 	"math"
 	"os"
 
+	"github.com/Akhil373/kde-screentime/internal/store"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	_ "modernc.org/sqlite"
 )
 
-func barChart(data []dailyScreenTime) *charts.Bar {
+func BarChart(data []store.DailyScreenTime) *charts.Bar {
 	bar := charts.NewBar()
 
 	bar.AddJSFuncs("document.body.style.backgroundColor = '#100c2a';")
@@ -37,7 +38,7 @@ func barChart(data []dailyScreenTime) *charts.Bar {
 
 	xLabels := make([]string, 0, len(data))
 	for _, v := range data {
-		xLabels = append(xLabels, v.day)
+		xLabels = append(xLabels, v.Day)
 	}
 	bar.SetXAxis(xLabels).
 		AddSeries("Daily Screen Time", generateBarItems(data)).
@@ -57,7 +58,7 @@ func barChart(data []dailyScreenTime) *charts.Bar {
 	return bar
 }
 
-func pieRoseArea(data []perAppDuration) *charts.Pie {
+func PieRoseArea(data []store.PerAppDuration) *charts.Pie {
 	pie := charts.NewPie()
 	pie.SetGlobalOptions(
 		charts.WithInitializationOpts(opts.Initialization{
@@ -108,26 +109,26 @@ func pieRoseArea(data []perAppDuration) *charts.Pie {
 	return pie
 }
 
-func generateBarItems(data []dailyScreenTime) []opts.BarData {
+func generateBarItems(data []store.DailyScreenTime) []opts.BarData {
 	items := make([]opts.BarData, 0, len(data))
 	for _, v := range data {
-		items = append(items, opts.BarData{Value: v.duration.Hours()})
+		items = append(items, opts.BarData{Value: v.Duration.Hours()})
 	}
 	return items
 }
 
-func generatePieItems(data []perAppDuration) []opts.PieData {
+func generatePieItems(data []store.PerAppDuration) []opts.PieData {
 	const minMinutes = 2.0
 	var items []opts.PieData
 	var otherHours float64
 
 	for i, v := range data {
-		hours := v.duration.Hours()
-		if i >= 7 || v.duration.Minutes() < minMinutes {
+		hours := v.Duration.Hours()
+		if i >= 7 || v.Duration.Minutes() < minMinutes {
 			otherHours += hours
 		} else {
 			items = append(items, opts.PieData{
-				Name:  v.wmclass,
+				Name:  v.Wmclass,
 				Value: math.Round(hours*100) / 100,
 			})
 		}
@@ -142,7 +143,7 @@ func generatePieItems(data []perAppDuration) []opts.PieData {
 	return items
 }
 
-func renderPage(filename string, charts ...components.Charter) error {
+func RenderPage(filename string, charts ...components.Charter) error {
 	page := components.NewPage()
 	page.AddCharts(charts...)
 	f, err := os.Create(filename)

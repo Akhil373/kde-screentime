@@ -1,31 +1,14 @@
-package main
+package store
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	_ "modernc.org/sqlite"
 )
-
-type Store struct {
-	db     *sql.DB
-	LastID *int64
-	mu     sync.Mutex
-}
-
-type dailyScreenTime struct {
-	day      string
-	duration time.Duration
-}
-
-type perAppDuration struct {
-	id, wmclass string
-	duration    time.Duration
-}
 
 func NewStore(path string) (*Store, error) {
 	db, err := sql.Open("sqlite", path)
@@ -67,20 +50,20 @@ func NewStore(path string) (*Store, error) {
 		return nil, err
 	}
 	return &Store{
-		db:     db,
+		Db:     db,
 		LastID: nil,
 	}, nil
 }
 
 func (s *Store) Record(win WindowInfo) error {
-	if s.db == nil {
+	if s.Db == nil {
 		return fmt.Errorf("database connection is nil")
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 
-	_, err := s.db.Exec(
+	_, err := s.Db.Exec(
 		`
     INSERT INTO apps (wmclass, name)
     VALUES (?, ?)
@@ -94,7 +77,7 @@ func (s *Store) Record(win WindowInfo) error {
 	}
 
 	if s.LastID != nil {
-		_, err = s.db.Exec(
+		_, err = s.Db.Exec(
 			`
     UPDATE screenactivity
     SET end_time = ?
@@ -108,7 +91,7 @@ func (s *Store) Record(win WindowInfo) error {
 		return err
 	}
 
-	result, err := s.db.Exec(
+	result, err := s.Db.Exec(
 		`
     INSERT INTO screenactivity
         (pid, app_id, start_time, end_time, title)
@@ -134,8 +117,8 @@ func (s *Store) Record(win WindowInfo) error {
 	return nil
 }
 
-func (s *Store) LoadTotalDuration(numOfDays int) ([]dailyScreenTime, error) {
-	if s.db == nil {
+func (s *Store) LoadTotalDuration(numOfDays int) ([]DailyScreenTime, error) {
+	if s.Db == nil {
 		return nil, fmt.Errorf("database connection is nil")
 	}
 
@@ -152,13 +135,13 @@ func (s *Store) LoadTotalDuration(numOfDays int) ([]dailyScreenTime, error) {
 `
 
 	ctx := context.TODO()
-	rows, err := s.db.QueryContext(ctx, dailyTotalScreenTimeQ, fmt.Sprintf("-%d days", numOfDays))
+	rows, err := s.Db.QueryContext(ctx, dailyTotalScreenTimeQ, fmt.Sprintf("-%d days", numOfDays))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	pastWeekScreenTime := make([]dailyScreenTime, 0)
+	pastWeekScreenTime := make([]DailyScreenTime, 0)
 
 	for rows.Next() {
 		var day string
@@ -167,7 +150,7 @@ func (s *Store) LoadTotalDuration(numOfDays int) ([]dailyScreenTime, error) {
 			log.Fatal(err)
 		}
 
-		pastWeekScreenTime = append(pastWeekScreenTime, dailyScreenTime{day, time.Duration(duration) * time.Second})
+		pastWeekScreenTime = append(pastWeekScreenTime, DailyScreenTime{day, time.Duration(duration) * time.Second})
 	}
 
 	if err := rows.Err(); err != nil {
@@ -177,12 +160,12 @@ func (s *Store) LoadTotalDuration(numOfDays int) ([]dailyScreenTime, error) {
 	return pastWeekScreenTime, nil
 }
 
-func (s *Store) LoadPerAppDuration() ([]perAppDuration, error) {
-	if s.db == nil {
+func (s *Store) LoadPerAppDuration() ([]PerAppDuration, error) {
+	if s.Db == nil {
 		return nil, fmt.Errorf("database connection is nil")
 	}
 
-	perAppDurationQ := `
+	PerAppDurationQ := `
     SELECT
         a.id,
         a.wmclass,
@@ -196,13 +179,13 @@ func (s *Store) LoadPerAppDuration() ([]perAppDuration, error) {
 `
 
 	ctx := context.TODO()
-	rows, err := s.db.QueryContext(ctx, perAppDurationQ)
+	rows, err := s.Db.QueryContext(ctx, PerAppDurationQ)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	perAppDurationData := make([]perAppDuration, 0)
+	perAppDurationData := make([]PerAppDuration, 0)
 
 	for rows.Next() {
 		var id, wmclass string
@@ -211,10 +194,10 @@ func (s *Store) LoadPerAppDuration() ([]perAppDuration, error) {
 			log.Fatal(err)
 		}
 
-		perAppDurationData = append(perAppDurationData, perAppDuration{
-			id:       id,
-			wmclass:  wmclass,
-			duration: time.Duration(duration) * time.Second,
+		perAppDurationData = append(perAppDurationData, PerAppDuration{
+			Id:       id,
+			Wmclass:  wmclass,
+			Duration: time.Duration(duration) * time.Second,
 		})
 	}
 
@@ -226,15 +209,15 @@ func (s *Store) LoadPerAppDuration() ([]perAppDuration, error) {
 }
 
 func (s *Store) Heartbeat() error {
-	if s.db == nil {
+	if s.Db == nil {
 		return fmt.Errorf("database connection is nil")
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 
 	if s.LastID != nil {
-		_, err := s.db.Exec(
+		_, err := s.Db.Exec(
 			`
     UPDATE screenactivity
     SET end_time = ?
@@ -251,12 +234,12 @@ func (s *Store) Heartbeat() error {
 }
 
 func (s *Store) Finalize() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 
 	if s.LastID != nil {
 
-		_, err := s.db.Exec(
+		_, err := s.Db.Exec(
 			`
     UPDATE screenactivity
     SET end_time = ?
@@ -278,8 +261,8 @@ func (s *Store) Close() error {
 	if err != nil {
 		return err
 	}
-	if s.db == nil {
+	if s.Db == nil {
 		return nil
 	}
-	return s.db.Close()
+	return s.Db.Close()
 }
