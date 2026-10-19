@@ -36,7 +36,7 @@ func RunDaemon() {
 	objPath := dbus.ObjectPath("/org/screentime/Tracker")
 	interfaceName := "org.screentime.Tracker"
 
-	err = conn.Export(&tr, objPath, interfaceName)
+	err = conn.Export(tr, objPath, interfaceName)
 	if err != nil {
 		panic(err)
 	}
