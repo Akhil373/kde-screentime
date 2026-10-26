@@ -13,13 +13,16 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+var chartBgColor = "#000"
+
 func BarChart(data []store.DailyScreenTime) *charts.Bar {
 	bar := charts.NewBar()
 
-	bar.AddJSFuncs("document.body.style.backgroundColor = '#100c2a';")
+	bar.AddJSFuncs("document.body.style.backgroundColor = '#000';")
 	bar.SetGlobalOptions(
 		charts.WithInitializationOpts(opts.Initialization{
-			Theme: "dark",
+			Theme:           "dark",
+			BackgroundColor: chartBgColor,
 		}),
 		charts.WithTitleOpts(opts.Title{Title: "Week's Screen Time"}),
 		charts.WithTooltipOpts(opts.Tooltip{
@@ -53,7 +56,7 @@ func BarChart(data []store.DailyScreenTime) *charts.Bar {
 				Width: 2,
 				Type:  "dashed",
 			}},
-		))
+		), charts.WithItemStyleOpts(opts.ItemStyle{Color: "yellow"}))
 
 	return bar
 }
@@ -62,7 +65,8 @@ func PieRoseArea(data []store.PerAppDuration) *charts.Pie {
 	pie := charts.NewPie()
 	pie.SetGlobalOptions(
 		charts.WithInitializationOpts(opts.Initialization{
-			Theme: "dark",
+			Theme:           "dark",
+			BackgroundColor: chartBgColor,
 		}),
 		charts.WithTitleOpts(opts.Title{
 			Title: "App Usage Breakdown",
